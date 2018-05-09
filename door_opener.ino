@@ -1,22 +1,20 @@
 #include <SoftwareSerial.h>
 
-String inputString="";
-String wifi_response="";
-String chk_str="";
 
-String AP = "";       // change access point name
-String PASS = "";     //change access point password
+String AP = "";       // CHANGE ME
+String PASS = ""; // CHANGE ME
 
-String USER_ID = "";    //Username for Webpage
-String USER_PASS = "";  //Password for Webpage
+String USER_ID = ""; //Username for IOTGecko
+String USER_PASS = ""; //Password for IOTGecko
 String PORT= "80";
-String HOST=""; //Change host name
+String HOST="";
 
 int countTrueCommand;
 int countTimeCommand; 
 boolean found = false; 
-
+int pinVal=0;
 SoftwareSerial esp8266(2,3); // make RX Arduino line is pin 2, make TX Arduino line is pin 3.
+//Physical pin connection, RX is on the TX Pin abd TX is on the RX pin
 
 String data="";
 int reset;
@@ -57,22 +55,30 @@ void loop()
   }
   else
   {        
-  sendReq();
-  counter=0;
+  int test=sendReq();
+  counter++;
+  if(counter%2==0){
+    Serial.println("pinVal is:" + String(test));
+    reset=1;
+  }
+  sendData("AT+CIPCLOSE","OK",5,0);
   }
 }
 
-void sendReq(){
-    sendData("AT+CIPSEND=75",">",100,0);
-    esp8266.println("GET http://iotgecko.com/IOTHit.aspx?id="+USER_ID+"&Pass="+USER_PASS);
-    while(counter<1000){
-      char c=esp8266.read();
-      Serial.print(c);
-      counter++;
-    }
-    Serial.println("Data is: "+ data);
+int sendReq(){
+    sendData("AT+CIPSEND=75",">",100,0); //Change 75 to length of the request being sent
+    esp8266.println(""); //Put GET request for the site with 
     countTrueCommand++;
-    sendData("AT+CIPCLOSE","OK",5,0);
+    if(esp8266.find("pin=0")) //Compare the ESP response to expected response
+    {
+      pinVal = 0;
+      return pinVal;
+    }
+    else //Compare the ESP response to expected response
+    {
+      pinVal = 1;
+      return pinVal;
+    }
 }
 
 void sendData(String cmd,char response[],int timeout,int debug) 
@@ -106,6 +112,4 @@ void sendData(String cmd,char response[],int timeout,int debug)
     countTimeCommand = 0;
     reset=1;
   }
-  
-  found = false;
- }    
+}
